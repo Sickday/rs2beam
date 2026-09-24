@@ -1,8 +1,11 @@
 -module(stream_encoder).
 
--include("core/common.hrl").
-
 -compile(export_all).
+
+allocate(Length) ->
+    <<0:Length/unit:8>>.
+
+    % << <<0:8/integer-unsigned-big>> || _ <- lists:seq(1, Length) >>.
 
 encode_u8be(Bin, Value) ->
     <<Bin/binary, Value:8/integer-unsigned-big>>.
@@ -10,8 +13,19 @@ encode_u8be(Bin, Value) ->
 encode_i8be(Bin, Value) ->
     <<Bin/binary, Value:8/integer-signed-big>>.
 
+encode_u8le(Bin, Value) ->
+    <<Bin/binary, Value:8/integer-unsigned-little>>.
+
+encode_i8le(Bin, Value) ->
+    <<Bin/binary, Value:8/integer-signed-little>>.
+
 encode_u16be(Bin, Value) ->
     <<Bin/binary, Value:16/integer-unsigned-big>>.
+
+encode_u16be_add(Bin, Value) ->
+    <<Bin/binary,
+      (Value bsr 8):8/integer-unsigned-big,
+      (Value + 128):8/integer-unsigned-big>>.
 
 encode_i16be(Bin, Value) ->
     <<Bin/binary, Value:16/integer-signed-big>>.
@@ -25,7 +39,7 @@ encode_i16le(Bin, Value) ->
 encode_u16le_add(Bin, Value) ->
     <<Bin/binary,
       (Value + 128):8/integer-unsigned-big,
-      (Value bsl 8):8/integer-unsigned-big>>.
+      (Value bsr 8):8/integer-unsigned-big>>.
 
 encode_u32be(Bin, Value) ->
     <<Bin/binary, Value:32/integer-unsigned-big>>.
@@ -58,7 +72,18 @@ encode_u64be(Bin, Value) ->
 encode_i64be(Bin, Value) ->
     <<Bin/binary, Value:64/integer-signed-big>>.
 
-encode_bits(Bin, Value, Amount) when is_boolean(Value) ->
-    <<Bin/bitstring, ?IF(Value, 1, 0):Amount>>;
+encode_u64le(Bin, Value) ->
+    <<Bin/binary, Value:64/integer-unsigned-little>>.
+
+encode_i64le(Bin, Value) ->
+    <<Bin/binary, Value:64/integer-signed-little>>.
+
+encode_string(Bin, Value) ->
+    <<Bin/binary, Value/binary, 10:8/integer-unsigned-big>>.
+
+encode_bits(Bin, true, Amount) ->
+    <<Bin/bitstring, 1:Amount>>;
+encode_bits(Bin, false, Amount) ->
+    <<Bin/bitstring, 0:Amount>>;
 encode_bits(Bin, Value, Amount) ->
     <<Bin/bitstring, Value:Amount>>.
