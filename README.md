@@ -1,7 +1,7 @@
-e_rune
+rs2beam
 =====
 
-An OTP library
+A RuneScape 2 Private server written in Erlang running on BEAM.
 
 Build
 -----

@@ -1,5 +1,5 @@
-{application, e_rune, [
-    {description, "An OTP library"},
+{application, rs2beam, [
+    {description, "A RuneScape 2 Private server written in Erlang running on BEAM."},
     {vsn, "0.1.0"},
     {registered, []},
     {applications, [
@@ -8,6 +8,6 @@
     ]},
     {env, []},
     {modules, []},
-    {licenses, ["Apache-2.0"]},
+    {licenses, ["BSD-3-Clause"]},
     {links, []}
  ]}.
