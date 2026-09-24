@@ -8,9 +8,24 @@ decode_u8be(<<Value:8/integer-unsigned-big, Rest/binary>>) ->
 decode_u8be(<<>>) ->
     {error, eof}.
 
+decode_u8be_add(<<Value:8/integer-unsigned-big, Rest/binary>>) ->
+    {(Value - 128) band 16#FF, Rest};
+decode_u8be_add(<<>>) ->
+    {error, eof}.
+
 decode_i8be(<<Value:8/integer-signed-big, Rest/binary>>) ->
     {Value, Rest};
 decode_i8be(<<>>) ->
+    {error, eof}.
+
+decode_i8be_sub(<<Value:8/integer-signed-big, Rest/binary>>) ->
+    {128 - Value, Rest};
+decode_i8be_sub(<<>>) ->
+    {error, eof}.
+
+decode_i8be_neg(<<Value:8/integer-signed-big, Rest/binary>>) ->
+    {-Value, Rest};
+decode_i8be_neg(<<>>) ->
     {error, eof}.
 
 decode_u16be(<<Value:16/integer-unsigned-big, Rest/binary>>) ->
@@ -19,7 +34,7 @@ decode_u16be(<<>>) ->
     {error, eof}.
 
 decode_u16be_add(<<Byte1:8, Byte2:8, Rest/binary>>) ->
-    {Byte1 bsl 8 bor (Byte2 - 128 band 16#FF), Rest};
+    {Byte1 bsl 8 bor ((Byte2 - 128) band 16#FF), Rest};
 decode_u16be_add(<<>>) ->
     {error, eof}.
 
@@ -39,7 +54,7 @@ decode_i16le(<<>>) ->
     {error, eof}.
 
 decode_u16le_add(<<Byte1:8, Byte2:8, Rest/binary>>) ->
-    {Byte2 bsl 8 bor (Byte1 - 128 band 16#FF), Rest};
+    {Byte2 bsl 8 bor ((Byte1 - 128) band 16#FF), Rest};
 decode_u16le_add(<<>>) ->
     {error, eof}.
 
