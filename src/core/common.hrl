@@ -1,1 +1,0 @@
--define(IF(Cond, R1, R2), (case (Cond) of true -> (R1); false -> (R2) end)).
