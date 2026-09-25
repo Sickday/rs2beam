@@ -419,6 +419,9 @@
 sidebar_interface(Index) ->
 	maps:get(Index, ?SIDEBAR_INTERFACES).
 
+sidebar_interfaces() ->
+	?SIDEBAR_INTERFACES.
+
 skill_id(Key) ->
 	maps:get(Key, ?SKILLS).
 
