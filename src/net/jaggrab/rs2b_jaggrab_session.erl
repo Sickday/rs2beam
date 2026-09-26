@@ -1,9 +1,6 @@
 -module(rs2b_jaggrab_session).
-
 -behaviour(gen_server).
-
 -include("rs2b_jaggrab.hrl").
-
 -export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2, handle_socket/1]).
 
 

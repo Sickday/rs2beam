@@ -1,7 +1,5 @@
 -module(rs2b_jaggrab_request).
-
 -compile(export_all).
-
 -include("rs2b_jaggrab.hrl").
 
 -define(PATHS, [

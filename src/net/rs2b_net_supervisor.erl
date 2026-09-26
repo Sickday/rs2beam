@@ -1,8 +1,6 @@
 -module(rs2b_net_supervisor).
-
 -behaviour(supervisor).
-
--compile(export_all).
+-export([start_link/1, init/1]).
 
 
 init(_Args) ->

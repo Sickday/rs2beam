@@ -1,9 +1,6 @@
 -module(rs2b_net_listener).
-
 -behaviour(gen_server).
-
--compile(export_all).
-
+-export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2]).
 -include("rs2b_net.hrl").
 
 

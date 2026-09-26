@@ -1,8 +1,14 @@
 -module(rs2b_acceptor).
 -behaviour(gen_server).
 -include("rs2b_net.hrl").
-
--export([start_link/1, init/1, handle_info/2, handle_call/3, handle_cast/2, handle_continue/2]).
+-export([
+	start_link/1,
+	init/1,
+	handle_info/2,
+	handle_call/3,
+	handle_cast/2,
+	handle_continue/2
+]).
 
 start_link(Args) ->
 	gen_server:start_link(?MODULE, Args, []).

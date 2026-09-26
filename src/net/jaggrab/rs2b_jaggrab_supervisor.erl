@@ -1,7 +1,5 @@
 -module(rs2b_jaggrab_supervisor).
-
 -behaviour(supervisor).
-
 -export([start_link/0, init/1]).
 
 start_link() ->
