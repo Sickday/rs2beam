@@ -1,3 +1,4 @@
 *.beam
 _build/
 .rebar3/
+erl_crash.dump

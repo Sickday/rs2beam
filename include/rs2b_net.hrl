@@ -11,3 +11,18 @@
 	socket :: port(),
 	acceptors :: list()
 }).
+
+-record(rs2b_net_acceptor_args, {
+	socket :: port(),
+	handler :: term(),
+	socket_opts :: list()
+}).
+
+-record(rs2b_net_acceptor, {
+	socket :: port(),
+	handler :: term(),
+	socket_opts :: list(),
+	served :: non_neg_integer(),
+	last_accepted_at :: integer() | undefined,
+	accept_ref :: integer() | undefined
+}).

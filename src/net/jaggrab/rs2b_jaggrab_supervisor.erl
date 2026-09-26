@@ -32,8 +32,8 @@ children() ->
 				rs2b_jaggrab_acceptor_supervisor,
 				#{
 					id => rs2b_jaggrab_acceptor,
-					start => {rs2b_jaggrab_acceptor, start_link, []},
-					restart => permanent
+					start => {rs2b_acceptor, start_link, []},
+					restart => temporary
 				}
 			]}
 		},
