@@ -19,7 +19,7 @@ handle_info({tcp, Socket, Request}, State) ->
 	ResponseSize = byte_size(maps:get(Response, file_data)),
 
 	case gen_tcp:send(Socket, maps:get(Response, file_data)) of
-		ok -> {noreply, State},
+		ok -> {noreply, State};
 		{error, Reason} -> {stop, Reason, State}
 	end;
 
