@@ -26,7 +26,7 @@ init(Socket) ->
 	erlang:send_after(?LOGIN_TIMEOUT, self(), login_timeout),
 	<<ServerSeed:64>> = crypto:strong_rand_bytes(8),
 	{ok, #rs2b_game_session{
-		socket = Socket, 
+		socket = Socket,
 		server_seed = ServerSeed
 	}}.
 
@@ -56,11 +56,13 @@ handle_data(<<14, _NameHash, Rest/binary>>, #rs2b_game_session{stage = connect} 
 handle_data(<<15, _/binary>>, #rs2b_game_session{stage = connect} = State) ->
 	%% TODO: OnDemand
 	{stop, normal, State};
+handle_data(<<Type, _/binary>>, #rs2b_game_session{stage = connect} = State) when Type =/= 14 ->
+	{stop, normal, State};
 handle_data(<<Type, Size, Block:Size/binary, _/binary>>, #rs2b_game_session{stage = login} = State)
 	when Type =:= 16; Type =:= 18 ->
 		login(Block, State);
 handle_data(<<Type, _/binary>>, #rs2b_game_session{stage = login} = State)
-	when Type =:= 16; Type =:= 18 ->
+	when Type =/= 16; Type =/= 18 ->
 		refuse(malformed_login, State);
 handle_data(Partial, State) ->
 	{noreply, State#rs2b_game_session{buffer = Partial}}.
@@ -71,7 +73,7 @@ login(Block, #rs2b_game_session{socket = Socket} = State) ->
 		{ok, AuthData} ?= decode_login_block(LoginBlock, application:get_env(rs2beam, rsa_key)),
 		{ok, Auth} ?= rs2b_net_authentication:decode(AuthData),
 		ok ?= check_seed(Auth, State),
-		{ok, PlayerPid} = enter_world(Handshake, Auth),
+		{ok, PlayerPid} ?= enter_world(Handshake, Auth),
 		ok ?= handoff(Socket, PlayerPid),
 		{stop, normal, State}
 	else

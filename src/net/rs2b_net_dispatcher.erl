@@ -28,7 +28,7 @@ start(Socket) ->
 stop(undefined, _Timeout) -> ok;
 stop(Socket, _Timeout) when is_port(Socket) -> ok;
 stop(DispatcherPid, Timeout) when is_pid(DispatcherPid) ->
-	Reference = process:monitor(process, DispatcherPid),
+	Reference = erlang:monitor(process, DispatcherPid),
 	erlang:send(DispatcherPid, {stop, self()}),
 
 	receive

@@ -1,12 +1,30 @@
 {application, rs2beam, [
 	{description, "A RuneScape 2 Private server written in Erlang running on BEAM."},
 	{vsn, "0.1.0"},
-	{registered, []},
+	{mod, {rs2beam, []}},
+	{registered, [
+		rs2b_supervisor,
+		rs2b_net_supervisor,
+		rs2b_game_acceptor_supervisor,
+		rs2b_dispatcher_supervisor,
+		rs2b_game_session_supervisor,
+		rs2b_game_listener,
+		rs2b_jaggrab_supervisor,
+		rs2b_jaggrab_session_supervisor,
+		rs2b_jaggrab_acceptor_supervisor,
+		rs2b_net_listener
+	]},
 	{applications, [
 		kernel,
-		stdlib
+		stdlib,
+		crypto
 	]},
-	{env, []},
+	{env, [
+		{game_port, 43594},
+		{game_acceptors, 16},
+		{jaggrab_port, 43595},
+		{jaggrab_acceptors, 16}
+	]},
 	{modules, []},
 	{licenses, ["BSD-3-Clause"]},
 	{links, []}

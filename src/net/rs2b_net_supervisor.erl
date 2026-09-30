@@ -51,7 +51,7 @@ children(_Args) ->
 			id => rs2b_game_listener,
 			start => {rs2b_net_listener, start_link, [
 				#{
-					name => rs2b_net_listener,
+					name => rs2b_game_listener,
 					port => application:get_env(rs2beam, game_port, 43594),
 					count => application:get_env(rs2beam, game_acceptors, 16#10),
 					handler => rs2b_game_session,
