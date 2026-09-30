@@ -26,3 +26,20 @@
 	last_accepted_at :: integer() | undefined,
 	accept_ref :: integer() | undefined
 }).
+
+-record(rs2b_net_handshake, {
+	version :: integer(),
+	low_memory :: boolean(),
+	crcs :: list()
+}).
+
+-record(rs2b_net_auth, {
+	seed :: list(),
+	uid :: integer(),
+	username :: binary(),
+	secret :: binary(),
+	signature :: integer() | binary(),
+	world :: term()
+}).
+
+-define(CLIENT_VERSION, 377).
