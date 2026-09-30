@@ -27,6 +27,13 @@
 	accept_ref :: integer() | undefined
 }).
 
+-record(rs2b_game_session, {
+	socket :: gen_tcp:socket(),
+	stage = connect :: connect | login,
+	buffer = <<>> :: binary(),
+	server_seed :: non_neg_integer()
+}).
+
 -record(rs2b_net_handshake, {
 	version :: integer(),
 	low_memory :: boolean(),

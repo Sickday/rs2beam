@@ -1,5 +1,30 @@
 -module(rs2b_stream_decoder).
--compile(export_all).
+-export([
+	decode_u8be/1,
+	decode_u8be_add/1,
+	decode_i8be/1,
+	decode_i8be_sub/1,
+	decode_i8be_neg/1,
+	decode_u16be/1,
+	decode_u16be_add/1,
+	decode_u16le/1,
+	decode_u16le_add/1,
+	decode_i16be/1,
+	decode_i16le/1,
+	decode_u24be/1,
+	decode_i32be/1,
+	decode_i32ime/1,
+	decode_i32me/1,
+	decode_u32be/1,
+	decode_u32le/1,
+	decode_u32me/1,
+	decode_u32ime/1,
+	decode_u64be/1,
+	decode_i64be/1,
+	decode_u64le/1,
+	decode_i64le/1,
+	decode_string/1
+]).
 
 
 decode_u8be(<<Value:8/integer-unsigned-big, Rest/binary>>) ->

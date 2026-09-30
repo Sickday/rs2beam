@@ -36,6 +36,18 @@ children(_Args) ->
 			]}
 		},
 		#{
+			id => rs2b_game_session_supervisor,
+			type => supervisor,
+			start => {rs2b_dynamic_supervisor, start_link, [
+				rs2b_game_session_supervisor,
+				#{
+					id => rs2b_game_session,
+					start => {rs2b_game_session, start_link, []},
+					restart => temporary
+				}
+			]}
+		},
+		#{
 			id => rs2b_game_listener,
 			start => {rs2b_net_listener, start_link, [
 				#{
