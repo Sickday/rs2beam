@@ -50,6 +50,7 @@ handle_info(_Msg, State) ->
 handle_data(<<14, _NameHash, Rest/binary>>, #rs2b_game_session{stage = connect} = State) ->
 	Ack = <<0:64, 0, (State#rs2b_game_session.server_seed):64>>,
 	case gen_tcp:send(State#rs2b_game_session.socket, Ack) of
+		% Set the state to login and handle the rest of the data
 		ok -> handle_data(Rest, State#rs2b_game_session{stage = login});
 		{error, Reason} -> {stop, {shutdown, Reason}, State}
 	end;
@@ -57,12 +58,15 @@ handle_data(<<15, _/binary>>, #rs2b_game_session{stage = connect} = State) ->
 	%% TODO: OnDemand
 	{stop, normal, State};
 handle_data(<<Type, _/binary>>, #rs2b_game_session{stage = connect} = State) when Type =/= 14 ->
+	% Almost certainly a desync; You should only get [14] on first connect.
 	{stop, normal, State};
 handle_data(<<Type, Size, Block:Size/binary, _/binary>>, #rs2b_game_session{stage = login} = State)
 	when Type =:= 16; Type =:= 18 ->
+		%Handle login and reloging (codes 16 and 18). In the future maybe check if already logged first.
 		login(Block, State);
 handle_data(<<Type, _/binary>>, #rs2b_game_session{stage = login} = State)
 	when Type =/= 16; Type =/= 18 ->
+		% Some other login code, could be a desync, better to send a code and drop it here.
 		refuse(malformed_login, State);
 handle_data(Partial, State) ->
 	{noreply, State#rs2b_game_session{buffer = Partial}}.
@@ -90,10 +94,10 @@ decode_login_block(<<Length, Cipher:Length/binary, _/binary>>, {ok, {Exponent, M
 decode_login_block(_, _) ->
 	{error, malformed_login}.
 
-check_seed(#rs2b_net_auth{seed = [_, _, High, Low]}, #rs2b_game_session{server_seed = Seed}) ->
-	case (High bsl 32) bor Low of
-		Seed -> ok;
-		_ -> {error, bad_seed}
+check_seed(#rs2b_net_auth{seed = [_, _, High, Low]}, #rs2b_game_session{server_seed = ServerSeed}) ->
+	case ((High bsl 32) bor Low)  =:= ServerSeed of
+		true -> ok;
+		false -> {error, bad_seed}
 	end.
 
 enter_world(_Handshake, _Auth) ->
