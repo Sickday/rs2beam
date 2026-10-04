@@ -1,7 +1,9 @@
 -module(rs2b_jaggrab_session).
 -behaviour(gen_server).
 -include("rs2b_jaggrab.hrl").
+-include_lib("kernel/include/logger.hrl").
 -export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2, handle_socket/1]).
+-export([handle_request/2]).
 
 
 start_link(Socket) ->
@@ -16,19 +18,31 @@ handle_call(_Msg, _From, State) ->
 handle_cast(_Msg, State) ->
 	{noreply, State}.
 
-handle_info({tcp, _Socket, <<10:8/integer-unsigned-big>>}, State) ->
+handle_info({tcp, _Socket, <<"\n">>}, State) ->
 	{noreply, State};
 handle_info({tcp, Socket, Request}, State) ->
-	RequestString = string:trim(Request),
-	Response = decode_request(RequestString),
-	ResponseSize = byte_size(Response#jaggrab_response.file_data),
-
+	TrimmedRequest = string:trim(Request),
+	JRequest = decode_request(TrimmedRequest),
+	{ok, CachePid} = rs2b_cache_supervisor:get_pid(377), % Temporary, we can decode the actual revision in the crc request.
+	Response = handle_request(JRequest, CachePid),
 	case gen_tcp:send(Socket, Response#jaggrab_response.file_data) of
-		ok -> {noreply, State};
+		ok ->
+			gen_tcp:close(Socket),
+			{stop, normal, State};
 		{error, Reason} -> {stop, Reason, State}
 	end;
 handle_info({tcp_closed, _Socket}, State) ->
 	{stop, normal, State}.
+
+handle_request(#jaggrab_request{file_path = FileType}, CachePid) ->
+	case rs2b_jaggrab_request:fetch(FileType, CachePid) of
+		{ok, Data} ->
+			?LOG_DEBUG("[JAGGRAB] Serving ~s (~b bytes)", [FileType, byte_size(Data)], #{domain => [rs2beam, network]}),
+			rs2b_jaggrab_response:to_jaggrab_response(Data);
+		{error, Reason} ->
+			?LOG_ERROR("[JAGGRAB] Failed to serve ~p: ~p", [FileType, Reason]),
+			rs2b_jaggrab_response:to_jaggrab_response(<<>>)
+	end.
 
 handle_socket(Socket) ->
 	maybe
@@ -43,6 +57,5 @@ handle_socket(Socket) ->
 
 decode_request(<<"JAGGRAB /", Path/binary>>) ->
 	RequestPath = string:trim(Path, trailing),
-	rs2b_jaggrab_request:new(RequestPath);
-decode_request(Request) ->
-	{ok, Request}.
+	JaggrabPath = rs2b_jaggrab_request:find_path(RequestPath),
+	rs2b_jaggrab_request:new(JaggrabPath).

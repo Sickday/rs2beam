@@ -44,31 +44,17 @@ handle_info({inet_async, _Socket, Ref, {ok, ClientSocket}}, #rs2b_net_acceptor{s
 		{ok, Mod} ->
 			true = inet_db:register_socket(ClientSocket, Mod),
 			inet:setopts(ClientSocket, SocketOpts),
-			{ok, {IP, _Port}} = inet:peername(ClientSocket),
-			case rs2b_ip_throttler:check_and_register(IP) of
-				ok ->
-					SocketHandler:handle_socket(ClientSocket),
+			SocketHandler:handle_socket(ClientSocket),
 
-					case prim_inet:async_accept(ListenSocket, -1) of
-						{ok, NewRef} ->
-							{noreply, State#rs2b_net_acceptor{
-								served = State#rs2b_net_acceptor.served + 1,
-								last_accepted_at = erlang:monotonic_time(millisecond),
-								accept_ref = NewRef
-							}};
-						{error, Reason} ->
-							{stop, Reason, State}
-					end;
-				{deny, Response} ->
-					gen_tcp:send(ClientSocket, <<Response>>),
-					gen_tcp:close(ClientSocket),
-
-					case prim_inet:async_accept(ListenSocket, -1) of
-						{ok, NewRef} ->
-							{noreply, State#rs2b_net_acceptor{accept_ref = NewRef}};
-						{error, Reason} ->
-							{stop, Reason, State}
-					end
+			case prim_inet:async_accept(ListenSocket, -1) of
+				{ok, NewRef} ->
+					{noreply, State#rs2b_net_acceptor{
+						served = State#rs2b_net_acceptor.served + 1,
+						last_accepted_at = erlang:monotonic_time(millisecond),
+						accept_ref = NewRef
+					}};
+				{error, Reason} ->
+					{stop, Reason, State}
 			end;
 
 		{error, closed} ->

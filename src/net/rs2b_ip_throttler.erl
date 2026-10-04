@@ -39,17 +39,22 @@ check_and_register(IP) ->
 					NewCount = ets:update_counter(?TABLE, IP,  {#rs2b_ip_throttle_entry.count, 1}),
 					ets:update_element(?TABLE, IP, {#rs2b_ip_throttle_entry.last_seen, Now}),
 					case NewCount > ?MAX_CONNECTIONS of
-						true -> {deny, 9};
+						true ->
+							% Refused connections don't hold a slot.
+							deregister(IP),
+							{deny, 9};
 						false -> ok
 					end
 			end
 	end.
 
 deregister(IP) ->
-	case ets:update_counter(?TABLE, IP, {#rs2b_ip_throttle_entry.count, -1}, {undefined}) of
-		{undefined} -> ok;
-		0 -> ets:delete(?TABLE, IP);
+	try ets:update_counter(?TABLE, IP, {#rs2b_ip_throttle_entry.count, -1}) of
+		Count when Count =< 0 -> ets:delete(?TABLE, IP), ok;
 		_ -> ok
+	catch
+		% The entry was already swept.
+		error:badarg -> ok
 	end.
 
 handle_call(_Msg, _From, State) ->

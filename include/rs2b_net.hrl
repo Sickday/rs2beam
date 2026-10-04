@@ -31,7 +31,9 @@
 	socket :: gen_tcp:socket(),
 	stage = connect :: connect | login,
 	buffer = <<>> :: binary(),
-	server_seed :: non_neg_integer()
+	server_seed :: non_neg_integer(),
+	% Set once the connection is registered with rs2b_ip_throttler at login.
+	ip :: inet:ip_address() | undefined
 }).
 
 -record(rs2b_net_handshake, {

@@ -1,3 +1,3 @@
 [eqwalizer]
 enable_all = true
-ignore_modules = ["rs2b_cache_fs", "rs2b_cache_server", "rs2b_cache_supervisor"]
+ignore_modules = ["rs2b_cache_fs", "rs2b_cache_server", "rs2b_cache_supervisor", "rs2b_ondemand_session", "rs2b_http_server"]

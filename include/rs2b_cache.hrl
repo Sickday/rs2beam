@@ -1,7 +1,7 @@
 -define(ARCHIVE_COUT, 9).
 -define(HEADER_SIZE, 8).
 -define(CHUNK_SIZE, 512).
--define(BLOCK_SIZE, ?HEADER_SIZE + ?CHUNK_SIZE).
+-define(BLOCK_SIZE, (?HEADER_SIZE + ?CHUNK_SIZE)).
 -define(INDEX_SIZE, 6).
 
 -record(rs2b_cache_fs, {

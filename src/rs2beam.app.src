@@ -24,6 +24,7 @@
 		{game_acceptors, 16},
 		{jaggrab_port, 43595},
 		{jaggrab_acceptors, 16},
+		{http_port, 8080},
 		{cache, [{path, "cache"}, {revisions, [377]}]}
 	]},
 	{modules, []},

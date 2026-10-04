@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 -include("rs2b_net.hrl").
 -export([handle_socket/1, start_link/1]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2]).
 
 -define(SUPERVISOR, rs2b_game_session_supervisor).
 -define(LOGIN_TIMEOUT, 30000).
@@ -52,16 +52,42 @@ handle_info(login_timeout, State) ->
 handle_info(_Msg, State) ->
 	{noreply, State}.
 
-handle_data(<<14, _NameHash, Rest/binary>>, #rs2b_game_session{stage = connect} = State) ->
-	Ack = <<0:64, 0, (State#rs2b_game_session.server_seed):64>>,
-	case gen_tcp:send(State#rs2b_game_session.socket, Ack) of
-		% Set the state to login and handle the rest of the data
-		ok -> handle_data(Rest, State#rs2b_game_session{stage = login});
-		{error, Reason} -> {stop, {shutdown, Reason}, State}
+terminate(_Reason, #rs2b_game_session{ip = undefined}) ->
+	ok;
+terminate(_Reason, #rs2b_game_session{ip = IP}) ->
+	rs2b_ip_throttler:deregister(IP).
+
+throttle(Socket) ->
+	maybe
+		{ok, {IP, _Port}} ?= inet:peername(Socket),
+		ok ?= rs2b_ip_throttler:check_and_register(IP),
+		{ok, IP}
+	end.
+
+handle_data(<<14, _NameHash, Rest/binary>>, #rs2b_game_session{stage = connect, socket = Socket} = State) ->
+	% Only login connections are throttled; JAGGRAB and ondemand never register.
+	case throttle(Socket) of
+		{ok, IP} ->
+			Registered = State#rs2b_game_session{ip = IP},
+			Ack = <<0:64, 0, (State#rs2b_game_session.server_seed):64>>,
+			case gen_tcp:send(Socket, Ack) of
+				% Set the state to login and handle the rest of the data
+				ok -> handle_data(Rest, Registered#rs2b_game_session{stage = login});
+				{error, Reason} -> {stop, {shutdown, Reason}, Registered}
+			end;
+		{deny, Code} ->
+			_ = gen_tcp:send(Socket, <<0:64, Code>>),
+			{stop, normal, State};
+		{error, Reason} ->
+			{stop, {shutdown, Reason}, State}
 	end;
 handle_data(<<15, _/binary>>, #rs2b_game_session{stage = connect} = State) ->
-	%% TODO: OnDemand
-	{stop, normal, State};
+	case rs2b_ondemand_session:handle_socket(State#rs2b_game_session.socket) of
+		{ok, Pid} when is_pid(Pid) ->
+			{stop, normal, State};
+		{error, Reason} ->
+			{stop, {shutdown, Reason}, State}
+	end;
 handle_data(<<Type, _/binary>>, #rs2b_game_session{stage = connect} = State) when Type =/= 14 ->
 	% Almost certainly a desync; You should only get [14] on first connect.
 	{stop, normal, State};
@@ -95,7 +121,8 @@ login(Block, #rs2b_game_session{socket = Socket} = State) ->
 		% Register successes and failures for proper throttling on login
 		{ok, Authentication} ->
 			rs2b_login_throttler:register_success(Authentication#rs2b_net_auth.signature),
-			{stop, normal, State};
+			% The player process owns the socket now, so it's responsible for deregistering the IP.
+			{stop, normal, State#rs2b_game_session{ip = undefined}};
 		{error, {authentication, FailedAuth, Res}} ->
 			rs2b_login_throttler:register_failure(FailedAuth#rs2b_net_auth.signature),
 			refuse(Res, State);

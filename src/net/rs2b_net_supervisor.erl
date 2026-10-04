@@ -66,6 +66,11 @@ children(_Args) ->
 			]}
 		},
 		#{
+			id => rs2b_ondemand_supervisor,
+			type => supervisor,
+			start => {rs2b_ondemand_supervisor, start_link, []}
+		},
+		#{
 			id => rs2b_game_listener,
 			start => {rs2b_net_listener, start_link, [
 				#{
@@ -76,5 +81,10 @@ children(_Args) ->
 					socket_opts => rs2b_net:tcp_client_socket_options(),
 					supervisor => rs2b_game_acceptor_supervisor}
 			]}
+		},
+		#{
+			id => rs2b_http_server,
+			type => worker,
+			start => {rs2b_http_server, start_link, [application:get_env(rs2beam, http_port, 8080)]}
 		}
 	].
