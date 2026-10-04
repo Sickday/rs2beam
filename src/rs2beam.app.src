@@ -23,7 +23,8 @@
 		{game_port, 43594},
 		{game_acceptors, 16},
 		{jaggrab_port, 43595},
-		{jaggrab_acceptors, 16}
+		{jaggrab_acceptors, 16},
+		{cache, [{path, "cache"}, {revisions, [377]}]}
 	]},
 	{modules, []},
 	{licenses, ["BSD-3-Clause"]},

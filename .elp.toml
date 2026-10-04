@@ -1,0 +1,3 @@
+[eqwalizer]
+enable_all = true
+ignore_modules = ["rs2b_cache_fs", "rs2b_cache_server", "rs2b_cache_supervisor"]

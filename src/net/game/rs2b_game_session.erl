@@ -78,6 +78,7 @@ handle_data(Partial, State) ->
 
 login(Block, #rs2b_game_session{socket = Socket} = State) ->
 	Result = maybe
+		% Capture login result so we can compare it later.
 		{ok, Handshake, LoginBlock} ?= rs2b_net_handshake:decode(Block),
 		{ok, AuthData} ?= decode_login_block(LoginBlock, application:get_env(rs2beam, rsa_key)),
 		{ok, Auth} ?= rs2b_net_authentication:decode(AuthData),
@@ -91,6 +92,7 @@ login(Block, #rs2b_game_session{socket = Socket} = State) ->
 		{ok, Auth}
 	end,
 	case Result of
+		% Register successes and failures for proper throttling on login
 		{ok, Authentication} ->
 			rs2b_login_throttler:register_success(Authentication#rs2b_net_auth.signature),
 			{stop, normal, State};
