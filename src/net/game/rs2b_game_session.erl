@@ -8,16 +8,21 @@
 -define(LOGIN_TIMEOUT, 30000).
 
 handle_socket(Socket) ->
-	maybe
-		{ok, Pid} ?= supervisor:start_child(?SUPERVISOR, [Socket]),
-		ok ?= gen_tcp:controlling_process(Socket, Pid),
-		{ok, Pid}
-	else
+	case supervisor:start_child(?SUPERVISOR, [Socket]) of
+		{ok, Pid} when is_pid(Pid) ->
+			case gen_tcp:controlling_process(Socket, Pid) of
+				ok -> {ok, Pid};
+				{error, Reason} ->
+					gen_tcp:close(Socket),
+					{error, Reason}
+				end;
+		{ok, undefined} ->
+			gen_tcp:close(Socket),
+			{error, failed_to_start_session};
 		{error, Reason} ->
 			gen_tcp:close(Socket),
 			{error, Reason}
 	end.
-
 
 start_link(Socket) ->
 	gen_server:start_link(?MODULE, Socket, []).
@@ -72,16 +77,28 @@ handle_data(Partial, State) ->
 	{noreply, State#rs2b_game_session{buffer = Partial}}.
 
 login(Block, #rs2b_game_session{socket = Socket} = State) ->
-	maybe
+	Result = maybe
 		{ok, Handshake, LoginBlock} ?= rs2b_net_handshake:decode(Block),
 		{ok, AuthData} ?= decode_login_block(LoginBlock, application:get_env(rs2beam, rsa_key)),
 		{ok, Auth} ?= rs2b_net_authentication:decode(AuthData),
 		ok ?= check_seed(Auth, State),
-		{ok, PlayerPid} ?= enter_world(Handshake, Auth),
+		{ok, PlayerPid} ?=
+			case enter_world(Handshake, Auth) of
+				{ok, Pid} -> {ok, Pid};
+				{error, Reason} -> {error, {authentication, Auth, Reason}}
+			end,
 		ok ?= handoff(Socket, PlayerPid),
-		{stop, normal, State}
-	else
-		{error, Reason} -> refuse(Reason, State)
+		{ok, Auth}
+	end,
+	case Result of
+		{ok, Authentication} ->
+			rs2b_login_throttler:register_success(Authentication#rs2b_net_auth.signature),
+			{stop, normal, State};
+		{error, {authentication, FailedAuth, Res}} ->
+			rs2b_login_throttler:register_failure(FailedAuth#rs2b_net_auth.signature),
+			refuse(Res, State);
+		{error, Res} ->
+			refuse(Res, State)
 	end.
 
 decode_login_block(<<10, AuthData/binary>>, undefined) ->
@@ -114,6 +131,7 @@ refuse(Reason, #rs2b_game_session{socket = Socket} = State) ->
 	_ = gen_tcp:send(Socket, Response),
 	{stop, normal, State}.
 
+response({deny, Code}) -> Code;
 response(Reason) when Reason =:= bad_magic; Reason =:= insufficient_data; Reason =:= eof ->
 	malformed_login;
 response(Reason) ->
@@ -121,6 +139,7 @@ response(Reason) ->
 
 peer(Socket) ->
 	case inet:peername(Socket) of
+		% eqwalizer:ignore
 		{ok, {IP, Port}} -> inet:ntoa(IP) ++ ":" ++ integer_to_list(Port);
 		{error, _} -> "unknown"
 	end.

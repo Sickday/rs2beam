@@ -12,6 +12,24 @@ start_link(Args) ->
 children(_Args) ->
 	[
 		#{
+			id => rs2b_login_throttler,
+			type => worker,
+			start => {
+				rs2b_login_throttler,
+				start_link,
+				[]
+			}
+		},
+		#{
+			id => rs2b_ip_throttler,
+			type => worker,
+			start => {
+				rs2b_ip_throttler,
+				start_link,
+				[]
+			}
+		},
+		#{
 			id => rs2b_game_acceptor_supervisor,
 			type => supervisor,
 			start => {rs2b_dynamic_supervisor, start_link, [
