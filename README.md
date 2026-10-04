@@ -3,7 +3,8 @@ rs2beam
 
 A RuneScape 2 Private server written in Erlang running on BEAM.
 
-Build
+Run
 -----
-
-    $ rebar3 compile
+```shell
+$ rebar3 shell
+```
